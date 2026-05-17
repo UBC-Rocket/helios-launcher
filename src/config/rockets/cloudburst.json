@@ -56,7 +56,7 @@
           "name": "Dashboard",
           "id": "7",
           "location": "https://github.com/helios-data/helios-dashboard",
-          "hash": "fc0db3d76c7587d9c7f859248324e9c923e1252c",
+          "hash": "ed47f23ecebcd3f749c9cb1424134cd9bd2dff86",
           "type": 1,
           "image_exists": null,
           "volumes": {},
