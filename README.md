@@ -36,6 +36,7 @@ The project uses `uv` for package management. Install dependencies:
 # Install using uv (recommended)
 pip install uv
 
+make submodule
 uv sync
 ```
 
@@ -44,7 +45,7 @@ uv sync
 Before running the application, generate the required protobuf Python files:
 
 ```bash
-make proto
+make protos
 ```
 
 This command compiles all `.proto` files in the `helios-protos/` directory into Python modules.
