@@ -3,6 +3,9 @@ User Interface for Project Helios using ImGui.
 """
 
 import os
+import platform
+import re
+import ctypes
 from imgui_bundle import imgui, immapp, hello_imgui
 from utils import TreeNode, TreeUtils, DockerUtils
 from .components import TreeComponent, EditorComponent, QuickActions
@@ -154,7 +157,85 @@ class UserInterface:
 
   def get_ports_list(self):
     ports = serial.tools.list_ports.comports()
-    return ["None"] + [f"{p.device}:{p.description}" for p in ports]
+    serial_devices = [f"{p.device}:{p.description}" for p in ports]
+    audio_devices = self._get_audio_devices()
+    return ["None"] + serial_devices + audio_devices
+
+  def _get_audio_devices(self) -> list[str]:
+    if platform.system() == "Linux":
+      return self._get_linux_audio_devices()
+    elif platform.system() == "Windows":
+      return self._get_windows_audio_devices()
+    return []
+
+  def _get_linux_audio_devices(self) -> list[str]:
+    snd_dir = "/dev/snd"
+    if not os.path.exists(snd_dir):
+      return []
+
+    card_names: dict[str, str] = {}
+    try:
+      with open("/proc/asound/cards") as f:
+        for line in f:
+          match = re.match(r"^\s*(\d+)\s+\[.*?\].*?:\s+(.+)", line)
+          if match:
+            card_names[match.group(1)] = match.group(2).strip()
+    except OSError:
+      pass
+
+    devices = []
+    try:
+      for dev_name in sorted(os.listdir(snd_dir)):
+        dev_path = os.path.join(snd_dir, dev_name)
+        m = re.match(r"pcmC(\d+)D(\d+)([pc])$", dev_name)
+        if m:
+          card = m.group(1)
+          dev = m.group(2)
+          mode = "Playback" if m.group(3) == "p" else "Capture"
+          card_label = card_names.get(card, f"Card {card}")
+          devices.append(f"{dev_path}:PCM {mode} - {card_label} (D{dev})")
+          continue
+        m = re.match(r"controlC(\d+)$", dev_name)
+        if m:
+          card_label = card_names.get(m.group(1), f"Card {m.group(1)}")
+          devices.append(f"{dev_path}:ALSA Control - {card_label}")
+    except OSError:
+      pass
+
+    return devices
+
+  def _get_windows_audio_devices(self) -> list[str]:
+    devices = []
+    try:
+      winmm = ctypes.windll.winmm
+
+      class WAVEOUTCAPS(ctypes.Structure):
+        _fields_ = [("wMid", ctypes.c_uint16), ("wPid", ctypes.c_uint16),
+                    ("vDriverVersion", ctypes.c_uint32), ("szPname", ctypes.c_char * 32),
+                    ("dwFormats", ctypes.c_uint32), ("wChannels", ctypes.c_uint16),
+                    ("wReserved1", ctypes.c_uint16), ("dwSupport", ctypes.c_uint32)]
+
+      class WAVEINCAPS(ctypes.Structure):
+        _fields_ = [("wMid", ctypes.c_uint16), ("wPid", ctypes.c_uint16),
+                    ("vDriverVersion", ctypes.c_uint32), ("szPname", ctypes.c_char * 32),
+                    ("dwFormats", ctypes.c_uint32), ("wChannels", ctypes.c_uint16),
+                    ("wReserved1", ctypes.c_uint16)]
+
+      for i in range(winmm.waveOutGetNumDevs()):
+        caps = WAVEOUTCAPS()
+        if winmm.waveOutGetDevCapsA(i, ctypes.byref(caps), ctypes.sizeof(caps)) == 0:
+          name = caps.szPname.decode("ascii", errors="replace").rstrip("\x00")
+          devices.append(f"audio_out_{i}:{name} (Output)")
+
+      for i in range(winmm.waveInGetNumDevs()):
+        caps = WAVEINCAPS()
+        if winmm.waveInGetDevCapsA(i, ctypes.byref(caps), ctypes.sizeof(caps)) == 0:
+          name = caps.szPname.decode("ascii", errors="replace").rstrip("\x00")
+          devices.append(f"audio_in_{i}:{name} (Input)")
+    except OSError:
+      pass
+
+    return devices
 
   def launch_helios(self):
     print("Generating component tree from protobufs and configuration...")
