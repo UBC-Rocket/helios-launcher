@@ -183,7 +183,7 @@ class UserInterface:
     except OSError:
       pass
 
-    devices = [f"{snd_dir}:All ALSA devices (direwolf/KISS)"]
+    devices = []
     try:
       for dev_name in sorted(os.listdir(snd_dir)):
         dev_path = os.path.join(snd_dir, dev_name)
