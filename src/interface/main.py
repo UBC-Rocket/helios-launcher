@@ -179,7 +179,7 @@ class UserInterface:
         node.image_exists, required = self.docker_utils.check_image_exists(node)
 
         # Load the saved required specs for the image
-        node.ports = {port: None for port in required.get('ports', [])}
+        node.devices = {d: None for d in required.get('devices', [])}
         node.volumes = required.get('volumes', [])
     else:
       for child in node.children:

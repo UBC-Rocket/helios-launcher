@@ -54,17 +54,17 @@ class DockerUtils:
 
     found_labels = images[0].labels
     
-    ports_raw = found_labels.get("ports", "[]")
+    devices_raw = found_labels.get("devices", "[]")
     volumes_raw = found_labels.get("volumes", "[]")
 
-    ports = json.loads(ports_raw)
+    devices = json.loads(devices_raw)
     volumes = json.loads(volumes_raw)
 
-    if not ports == [] or not volumes == []:
+    if devices or volumes:
       node.warning = True
 
     return True, {
-      "ports": ports,
+      "devices": devices,
       "volumes": volumes
     }
 
@@ -91,14 +91,24 @@ class DockerUtils:
 
       self.build_logs[node.name].append(f"Building docker image for {node.name}...\n")
 
-      # Get the required configuration ports/volumes
+      # Get the required configuration ports/volumes/devices
       with open(path / 'config.json', 'r') as file:
         data = json.load(file)
 
-        node.ports = {port: None for port in data.get('ports', [])}
-        node.volumes = data.get('volumes', [])
+        ports_raw = data.get('ports', [])
+        # Backwards compat: old config had ports as list of device path strings
+        if ports_raw and isinstance(ports_raw[0], str):
+          node.devices = {d: None for d in ports_raw}
+          node.ports = {}
+        else:
+          node.devices = {d: None for d in data.get('devices', [])}
+          node.ports = {p['source']: p.get('target', p['source']) for p in ports_raw}
 
-        if not node.ports == [] or not node.volumes == []:
+        node.volumes = data.get('volumes', [])
+        node.websites = data.get('websites', [])
+        node.flags = data.get('flags', [])
+
+        if node.devices or node.volumes:
           node.warning = True
 
       # Build the docker image
@@ -110,7 +120,7 @@ class DockerUtils:
           "location": node.location,
           "branch": node.branch or "",
           "hash": str(hash),
-          "ports": json.dumps(list(node.ports.keys())), # convert the dict_keys to str
+          "devices": json.dumps(list(node.devices.keys())),
           "volumes": json.dumps(list(node.volumes)),
         },
         rm=REMOVE_BUILD_INTERMEDIATES,

@@ -7,7 +7,7 @@ from config.settings import *
 TREE_FILE_NAME = "component_tree.json"
 
 class TreeNode:
-  def __init__(self, name, node_id, children=None, location: str = "", branch: str = "", hash: str = "", type: Node_Type = Node_Type['NONE'], volumes: dict = {}, ports: dict = {}):
+  def __init__(self, name, node_id, children=None, location: str = "", branch: str = "", hash: str = "", type: Node_Type = Node_Type['NONE'], volumes: dict = {}, devices: dict = {}, ports: dict = {}, flags: list = [], websites: list = []):
     self.name: str = name
     self.id: str = node_id
     self.children: list = children or []
@@ -17,7 +17,10 @@ class TreeNode:
     self.type: Node_Type = type
     self.image_exists: bool | None = None # None, False, True
     self.volumes: dict = volumes
+    self.devices: dict = devices
     self.ports: dict = ports
+    self.flags: list = flags
+    self.websites: list = websites
     self.warning: bool = False
     self.skip_spawn: bool = False
 
@@ -31,7 +34,10 @@ class TreeNode:
       "type": self.type.value,
       "image_exists": self.image_exists,
       "volumes": self.volumes,
+      "devices": self.devices,
       "ports": self.ports,
+      "flags": self.flags,
+      "websites": self.websites,
       "children": [child.to_dict() for child in self.children]
     }
 
@@ -66,17 +72,24 @@ class TreeUtils:
             v.mode = vol.get("mode", "")
             docker_spec.volumes.append(v)
 
-        for port in node.ports.keys():  # dict — use .values()
+        for device_target, device_source in node.devices.items():
+            d = component.Device()
+            d.target = device_target
+            d.source = device_source.split(":")[0] if device_source else ""
+            docker_spec.devices.append(d)
+
+        for container_port, host_port in node.ports.items():
             p = component.Port()
-            p.target = port
-            p.source = node.ports[port].split(":")[0] if node.ports[port] else ""
-            # p.type = port.get("type", "")
-            # p.source = port.get("source", "")
-            # p.target = port.get("target", "")
-            # p.read_only = port.get("read_only", "")
+            p.source = container_port
+            p.target = host_port or ""
             docker_spec.ports.append(p)
-        
+
         leaf.docker_spec = docker_spec
+
+        for flag in node.flags:
+            leaf.flags.extend(flag.split())
+        leaf.websites.extend(node.websites)
+
         base.leaf = leaf
       else: # Branch
         branch = component.ComponentGroup()
@@ -126,6 +139,14 @@ class TreeUtils:
     """Recursively converts a dictionary back into a TreeNode object."""
     children_data = data.pop("children", [])
 
+    # Backwards compat: old configs stored device mappings under "ports"
+    if "devices" in data:
+      devices = data.pop("devices", {})
+      ports = data.pop("ports", {})
+    else:
+      devices = data.pop("ports", {})
+      ports = {}
+
     node = TreeNode(
       name=data.get("name"),
       node_id=data.get("id"),
@@ -134,7 +155,10 @@ class TreeUtils:
       hash=data.get("hash", ""),
       type=Node_Type(data.get("type", 0)),
       volumes=data.pop("volumes", {}),
-      ports=data.pop("ports", {})
+      devices=devices,
+      ports=ports,
+      flags=data.get("flags", []),
+      websites=data.get("websites", [])
     )
 
     # Always need to scan if docker images exist if loading
