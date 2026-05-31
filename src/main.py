@@ -5,13 +5,13 @@ from config.settings import *
 
 # Mock data
 root_data = TreeNode("Helios", "root", [
-    TreeNode(HELIOS_CORE_CONTAINER, "main", location="https://github.com/helios-data/helios-core", type=Node_Type.GITHUB, hash="latest"),
+    TreeNode(HELIOS_CORE_CONTAINER, "main", location="https://github.com/helios-data/helios-core", type=Node_Type.GITHUB, branch="main"),
     TreeNode("FALCON", "1", [
-        TreeNode("Telemetry", "2", location="https://github.com/UBC-Rocket/helios-cots-telemetry", type=Node_Type.GITHUB, hash="latest"),
+        TreeNode("Telemetry", "2", location="https://github.com/UBC-Rocket/helios-cots-telemetry", type=Node_Type.GITHUB, branch="main"),
     ]),
     TreeNode("Services", "6", [
-      TreeNode("Dashboard", "7", location="https://github.com/helios-data/helios-dashboard", type=Node_Type.GITHUB, hash="latest"),
-      TreeNode("Livestreaming", "8", location="https://github.com/helios-data/helios-livestreaming", type=Node_Type.GITHUB, hash="latest"),
+      TreeNode("Dashboard", "7", location="https://github.com/helios-data/helios-dashboard", type=Node_Type.GITHUB, branch="main"),
+      TreeNode("Livestreaming", "8", location="https://github.com/helios-data/helios-livestreaming", type=Node_Type.GITHUB, branch="main"),
     ]),
 ])
 

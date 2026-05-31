@@ -36,7 +36,8 @@ class DockerUtils:
     node_hash = node.hash
 
     if not node.hash or node.hash == "latest":
-      node_hash = self.github_utils.get_latest_hash(node.location) if node.type == Node_Type['GITHUB'] else None
+      branch = node.branch or 'HEAD'
+      node_hash = self.github_utils.get_latest_hash(node.location, branch) if node.type == Node_Type['GITHUB'] else None
 
     filters = {
       "label": [
@@ -81,7 +82,8 @@ class DockerUtils:
         hash = self.github_utils.clone_repo(
             target_dir=path,
             repo_url=node.location,
-            hash=node.hash
+            branch=node.branch or None,
+            hash=node.hash or None
         )
       else:
         path = Path(node.location)
@@ -106,6 +108,7 @@ class DockerUtils:
         labels={
           "type": str(node.type.value),
           "location": node.location,
+          "branch": node.branch or "",
           "hash": str(hash),
           "ports": json.dumps(list(node.ports.keys())), # convert the dict_keys to str
           "volumes": json.dumps(list(node.volumes)),
