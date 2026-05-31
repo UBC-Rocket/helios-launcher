@@ -7,11 +7,12 @@ from config.settings import *
 TREE_FILE_NAME = "component_tree.json"
 
 class TreeNode:
-  def __init__(self, name, node_id, children=None, location: str = "", hash: str = "", type: Node_Type = Node_Type['NONE'], volumes: dict = {}, ports: dict = {}):
+  def __init__(self, name, node_id, children=None, location: str = "", branch: str = "", hash: str = "", type: Node_Type = Node_Type['NONE'], volumes: dict = {}, ports: dict = {}):
     self.name: str = name
     self.id: str = node_id
     self.children: list = children or []
     self.location: str = location
+    self.branch: str = branch
     self.hash: str = hash
     self.type: Node_Type = type
     self.image_exists: bool | None = None # None, False, True
@@ -25,6 +26,7 @@ class TreeNode:
       "name": self.name,
       "id": self.id,
       "location": self.location,
+      "branch": self.branch,
       "hash": self.hash,
       "type": self.type.value,
       "image_exists": self.image_exists,
@@ -128,6 +130,7 @@ class TreeUtils:
       name=data.get("name"),
       node_id=data.get("id"),
       location=data.get("location", ""),
+      branch=data.get("branch", ""),
       hash=data.get("hash", ""),
       type=Node_Type(data.get("type", 0)),
       volumes=data.pop("volumes", {}),

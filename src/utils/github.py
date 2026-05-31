@@ -23,24 +23,22 @@ class GithubUtils:
       return remote_refs.split()[0]
     raise GitCommandError("ls-remote", "Could not retrieve remote hash.")
 
-  def clone_repo(self, target_dir: Path, repo_url: str, hash: str | None = None) -> str | None:
+  def clone_repo(self, target_dir: Path, repo_url: str, branch: str | None = None, hash: str | None = None) -> str | None:
     try:
       # TODO: Don't force remove, instead use a temp folder library handler?
       if target_dir.exists():
         shutil.rmtree(target_dir, onexc=self._force_remove)
 
       print(f"Cloning into {target_dir}...")
-      repo = git.Repo.clone_from(repo_url, target_dir, multi_options=["--recurse-submodules"])
-      #repo = git.Repo.clone_from(repo_url, target_dir, multi_options=["--recurse-submodules", "-c", "core.sshCommand=ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"], allow_unsafe_options=True)
+      clone_kwargs: dict = {"multi_options": ["--recurse-submodules"]}
+      if branch:
+        clone_kwargs["branch"] = branch
+
+      repo = git.Repo.clone_from(repo_url, target_dir, **clone_kwargs)
 
       if hash:
-        if hash == "latest":
-          hash = self.get_latest_hash(repo_url)
-
         print(f"Checking out commit {hash}...")
         repo.git.checkout(hash)
-
-        # Update submodules to match the state at this commit
         repo.git.submodule("update", "--init", "--recursive")
 
       return repo.head.object.hexsha

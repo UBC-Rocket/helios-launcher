@@ -42,10 +42,10 @@ class EditorComponent:
         self.node_changed(node)
         node.location = new_location
 
-      changed_hash, new_hash = imgui.input_text("Hash", node.hash, 128)
-      if changed_hash:
+      changed_branch, new_branch = imgui.input_text("Branch", node.branch, 128)
+      if changed_branch:
         self.node_changed(node)
-        node.hash = new_hash
+        node.branch = new_branch
 
       changed_skip_spawn, new_skip_spawn = imgui.checkbox("Skip Docker Spawn", node.skip_spawn)
       if changed_skip_spawn:
