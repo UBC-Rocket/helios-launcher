@@ -154,7 +154,27 @@ class UserInterface:
 
   def get_ports_list(self):
     ports = serial.tools.list_ports.comports()
-    return ["None"] + [f"{p.device}:{p.description}" for p in ports] + ["/dev/snd:All ALSA devices (direwolf/KISS)"]
+    real_ports = [p for p in ports if p.hwid != "n/a"]
+    serial_devices = [f"{p.device}:{p.description}" for p in real_ports]
+    udev_symlinks = self._get_udev_serial_symlinks({p.device for p in real_ports})
+    return ["None"] + serial_devices + udev_symlinks + ["/dev/snd:All ALSA devices (direwolf/KISS)"]
+
+  def _get_udev_serial_symlinks(self, known_devices: set) -> list[str]:
+    dev_dir = "/dev"
+    if not os.path.exists(dev_dir):
+      return []
+    symlinks = []
+    try:
+      for name in sorted(os.listdir(dev_dir)):
+        path = os.path.join(dev_dir, name)
+        if not os.path.islink(path):
+          continue
+        resolved = os.path.realpath(path)
+        if resolved in known_devices:
+          symlinks.append(f"{path}:{name} → {os.path.basename(resolved)}")
+    except OSError:
+      pass
+    return symlinks
 
   def launch_helios(self):
     print("Generating component tree from protobufs and configuration...")
