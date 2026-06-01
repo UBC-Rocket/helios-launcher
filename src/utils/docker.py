@@ -50,7 +50,7 @@ class DockerUtils:
     images = self.client.images.list(name=node.name.lower(), filters=filters)
     
     if not images:
-      return False, {"ports": [], "volumes": []}
+      return False, {"devices": [], "volumes": [], "ports": {}}
 
     found_labels = images[0].labels
     
