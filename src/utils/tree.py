@@ -147,6 +147,11 @@ class TreeUtils:
       devices = data.pop("ports", {})
       ports = {}
 
+    if not isinstance(ports, dict):
+      ports = {}
+    if not isinstance(devices, dict):
+      devices = {}
+
     node = TreeNode(
       name=data.get("name"),
       node_id=data.get("id"),

@@ -61,6 +61,8 @@ class DockerUtils:
     devices = json.loads(devices_raw)
     volumes = json.loads(volumes_raw)
     ports = json.loads(ports_raw)
+    if not isinstance(ports, dict):
+      ports = {}
 
     if devices or volumes:
       node.warning = True
