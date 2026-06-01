@@ -53,14 +53,29 @@ class EditorComponent:
         node.skip_spawn = new_skip_spawn
 
       imgui.spacing()
+      imgui.push_style_color(imgui.Col_.text, (0.4, 0.4, 0.4, 1.0))
+      imgui.text("ADVANCED SETTINGS")
+      imgui.pop_style_color()
+      imgui.separator()
+      imgui.spacing()
 
-      # --- Advanced Settings - Ports ---
+      # --- Advanced Settings - Devices ---
+      if node.devices:
+        self._render_devices(node, available_ports)
+        imgui.spacing()
+
+      # --- Advanced Settings - Port Forwarding ---
       if node.ports:
-        self._render_ports(node, available_ports)
+        self._render_port_forwards(node)
+        imgui.spacing()
 
       # --- Advanced Settings - Volumes ---
       if node.volumes:
         self._render_volumes(node)
+        imgui.spacing()
+
+      # --- Advanced Settings - Flags ---
+      self._render_flags(node)
       
     imgui.spacing()
     imgui.separator()
@@ -86,36 +101,81 @@ class EditorComponent:
     """ If any of the basic node information is changed, we need to recheck if the image exists """
     node.image_exists = None
 
-  def _render_ports(self, node: TreeNode, available_ports: list = ["None"]):
+  def _render_devices(self, node: TreeNode, available_ports: list = ["None"]):
     imgui.push_style_color(imgui.Col_.text, (0.6, 0.6, 0.6, 1.0))
-    imgui.text("Required Port Bindings (Target : Source)")
+    imgui.text("Required Device Bindings (Target : Source)")
     imgui.pop_style_color()
     imgui.spacing()
-    for target_key in list(node.ports.keys()):
-      source_val = node.ports[target_key]
-      imgui.push_id(f"port_{target_key}")
+    for target_key in list(node.devices.keys()):
+      source_val = node.devices[target_key]
+      imgui.push_id(f"device_{target_key}")
 
-      # Show warning if no port selected
       current_idx = available_ports.index(source_val) if source_val in available_ports else 0
-      if current_idx == 0:  # "None" is selected (unbound)
+      if current_idx == 0:
         node.warning = True
         imgui.text_colored((1.0, 0.2, 0.2, 1.0), "⚠")
         imgui.same_line()
-      
+
       imgui.set_next_item_width(100)
       imgui.text(target_key)
 
       imgui.same_line()
       imgui.text(":")
       imgui.same_line()
-      
+
       imgui.set_next_item_width(imgui.get_content_region_avail().x - 10)
       v_changed, new_idx = imgui.combo("##source", current_idx, available_ports)
 
       if v_changed:
-        node.ports[target_key] = available_ports[new_idx]
+        node.devices[target_key] = available_ports[new_idx]
 
       imgui.pop_id()
+
+  def _render_port_forwards(self, node: TreeNode):
+    imgui.push_style_color(imgui.Col_.text, (0.6, 0.6, 0.6, 1.0))
+    imgui.text("Port Forwarding (Container : Host)")
+    imgui.pop_style_color()
+    imgui.spacing()
+    for container_port in list(node.ports.keys()):
+      host_port = node.ports.get(container_port) or ""
+      imgui.push_id(f"portfwd_{container_port}")
+
+      imgui.set_next_item_width(80)
+      imgui.text(container_port)
+      imgui.same_line()
+      imgui.text(":")
+      imgui.same_line()
+
+      imgui.set_next_item_width(imgui.get_content_region_avail().x - 10)
+      changed, new_host = imgui.input_text("##host", host_port, 32)
+      if changed:
+        node.ports[container_port] = new_host
+
+      imgui.pop_id()
+
+  def _render_flags(self, node: TreeNode):
+    imgui.push_style_color(imgui.Col_.text, (0.6, 0.6, 0.6, 1.0))
+    imgui.text("Launch Flags")
+    imgui.pop_style_color()
+    imgui.spacing()
+
+    to_remove = None
+    for i, flag in enumerate(node.flags):
+      imgui.push_id(f"flag_{i}")
+      imgui.set_next_item_width(imgui.get_content_region_avail().x - 30)
+      changed, new_flag = imgui.input_text("##flag", flag, 256)
+      if changed:
+        node.flags[i] = new_flag
+      imgui.same_line()
+      if imgui.button("-", (20, 0)):
+        to_remove = i
+      imgui.pop_id()
+
+    if to_remove is not None:
+      node.flags.pop(to_remove)
+
+    if imgui.button("+ Add Flag"):
+      node.flags.append("")
 
   def _render_volumes(self, node: TreeNode):
     imgui.push_style_color(imgui.Col_.text, (0.6, 0.6, 0.6, 1.0))

@@ -3,6 +3,7 @@ User Interface for Project Helios using ImGui.
 """
 
 import os
+import re
 from imgui_bundle import imgui, immapp, hello_imgui
 from utils import TreeNode, TreeUtils, DockerUtils
 from .components import TreeComponent, EditorComponent, QuickActions
@@ -154,7 +155,30 @@ class UserInterface:
 
   def get_ports_list(self):
     ports = serial.tools.list_ports.comports()
-    return ["None"] + [f"{p.device}:{p.description}" for p in ports]
+    real_ports = [p for p in ports if p.hwid != "n/a"]
+    serial_devices = [f"{p.device}:{p.description}" for p in real_ports]
+    udev_symlinks = self._get_udev_serial_symlinks({p.device for p in real_ports})
+    return ["None"] + serial_devices + udev_symlinks + ["/dev/snd:All ALSA devices (direwolf/KISS)"]
+
+  def _get_udev_serial_symlinks(self, known_devices: set) -> list[str]:
+    dev_dir = "/dev"
+    if not os.path.exists(dev_dir):
+      return []
+    symlinks = []
+    try:
+      for name in sorted(os.listdir(dev_dir)):
+        path = os.path.join(dev_dir, name)
+        if not os.path.islink(path):
+          continue
+        target_basename = os.path.basename(os.readlink(path))
+        resolved = os.path.realpath(path)
+        # Include if it resolves to a known connected device, or if its target
+        # looks like a tty device (catches disconnected udev symlinks by name)
+        if resolved in known_devices or re.match(r"tty[A-Z]", target_basename):
+          symlinks.append(f"{path}:{name} → {target_basename}")
+    except OSError:
+      pass
+    return symlinks
 
   def launch_helios(self):
     print("Generating component tree from protobufs and configuration...")
@@ -179,8 +203,9 @@ class UserInterface:
         node.image_exists, required = self.docker_utils.check_image_exists(node)
 
         # Load the saved required specs for the image
-        node.ports = {port: None for port in required.get('ports', [])}
+        node.devices = {d: None for d in required.get('devices', [])}
         node.volumes = required.get('volumes', [])
+        node.ports = required.get('ports', {})
     else:
       for child in node.children:
         self._scan_node_image_exists(child)

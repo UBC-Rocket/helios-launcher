@@ -7,7 +7,10 @@
   "type": 0,
   "image_exists": null,
   "volumes": {},
+  "devices": {},
   "ports": {},
+  "flags": [],
+  "websites": [],
   "children": [
     {
       "name": "HeliosCore",
@@ -18,7 +21,10 @@
       "type": 1,
       "image_exists": null,
       "volumes": {},
+      "devices": {},
       "ports": {},
+      "flags": [],
+      "websites": [],
       "children": []
     },
     {
@@ -30,7 +36,10 @@
       "type": 0,
       "image_exists": null,
       "volumes": {},
+      "devices": {},
       "ports": {},
+      "flags": [],
+      "websites": [],
       "children": [
         {
           "name": "Telemetry",
@@ -41,7 +50,10 @@
           "type": 1,
           "image_exists": null,
           "volumes": {},
+          "devices": {},
           "ports": {},
+          "flags": [],
+          "websites": [],
           "children": []
         }
       ]
@@ -55,7 +67,10 @@
       "type": 0,
       "image_exists": null,
       "volumes": {},
+      "devices": {},
       "ports": {},
+      "flags": [],
+      "websites": [],
       "children": [
         {
           "name": "Dashboard",
@@ -66,7 +81,10 @@
           "type": 1,
           "image_exists": null,
           "volumes": {},
+          "devices": {},
           "ports": {},
+          "flags": [],
+          "websites": [],
           "children": []
         },
         {
@@ -78,7 +96,25 @@
           "type": 1,
           "image_exists": null,
           "volumes": {},
+          "devices": {},
           "ports": {},
+          "flags": [],
+          "websites": [],
+          "children": []
+        },
+        {
+          "name": "TeleGPS",
+          "id": "node_1",
+          "location": "https://github.com/helios-data/helios-telegps-telemetry",
+          "branch": "IREC2026",
+          "hash": "",
+          "type": 1,
+          "image_exists": null,
+          "volumes": {},
+          "devices": {},
+          "ports": {},
+          "flags": [],
+          "websites": [],
           "children": []
         }
       ]
