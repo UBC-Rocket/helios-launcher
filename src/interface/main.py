@@ -3,6 +3,7 @@ User Interface for Project Helios using ImGui.
 """
 
 import os
+import re
 from imgui_bundle import imgui, immapp, hello_imgui
 from utils import TreeNode, TreeUtils, DockerUtils
 from .components import TreeComponent, EditorComponent, QuickActions
@@ -169,9 +170,12 @@ class UserInterface:
         path = os.path.join(dev_dir, name)
         if not os.path.islink(path):
           continue
+        target_basename = os.path.basename(os.readlink(path))
         resolved = os.path.realpath(path)
-        if resolved in known_devices:
-          symlinks.append(f"{path}:{name} → {os.path.basename(resolved)}")
+        # Include if it resolves to a known connected device, or if its target
+        # looks like a tty device (catches disconnected udev symlinks by name)
+        if resolved in known_devices or re.match(r"tty[A-Z]", target_basename):
+          symlinks.append(f"{path}:{name} → {target_basename}")
     except OSError:
       pass
     return symlinks
