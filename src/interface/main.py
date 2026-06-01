@@ -181,6 +181,7 @@ class UserInterface:
         # Load the saved required specs for the image
         node.devices = {d: None for d in required.get('devices', [])}
         node.volumes = required.get('volumes', [])
+        node.ports = required.get('ports', {})
     else:
       for child in node.children:
         self._scan_node_image_exists(child)

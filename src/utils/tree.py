@@ -161,8 +161,7 @@ class TreeUtils:
       websites=data.get("websites", [])
     )
 
-    # Always need to scan if docker images exist if loading
-    node.image_exists = False
+    node.image_exists = None
 
     for child_dict in children_data:
       node.children.append(self._dict_to_node(child_dict))
