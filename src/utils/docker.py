@@ -5,6 +5,8 @@ import threading
 from .github import GithubUtils
 from .tree import TreeNode
 from config import *
+from git.exc import GitCommandError
+import platform
 import re
 import json
 import time
@@ -37,7 +39,11 @@ class DockerUtils:
 
     if not node.hash or node.hash == "latest":
       branch = node.branch or 'HEAD'
-      node_hash = self.github_utils.get_latest_hash(node.location, branch) if node.type == Node_Type['GITHUB'] else None
+      try:
+        node_hash = self.github_utils.get_latest_hash(node.location, branch) if node.type == Node_Type['GITHUB'] else None
+      except (GitCommandError, Exception) as e:
+        print(f"[WARNING] Could not fetch latest hash for {node.name} (no internet or remote unreachable: {e}). Falling back to any locally built image on branch '{branch}'.")
+        node_hash = None
 
     filters = {
       "label": [
@@ -48,12 +54,22 @@ class DockerUtils:
     }
 
     images = self.client.images.list(name=node.name.lower(), filters=filters)
-    
+
+    if not images and node_hash is None:
+      # No internet — fall back to any locally built image regardless of hash
+      filters_no_hash = {
+        "label": [
+          f"location={node.location}",
+          f"type={node.type.value}",
+        ]
+      }
+      images = self.client.images.list(name=node.name.lower(), filters=filters_no_hash)
+
     if not images:
       return False, {"devices": [], "volumes": [], "ports": {}}
 
     found_labels = images[0].labels
-    
+
     devices_raw = found_labels.get("devices", "[]")
     volumes_raw = found_labels.get("volumes", "[]")
     ports_raw = found_labels.get("ports", "{}")
@@ -225,9 +241,13 @@ class DockerUtils:
     mount_volumes = DOCKER_VOLUME_CONFIG | {
         str(tree_path): {
           'bind': '/temp/component_tree.json',
-          'mode': 'ro' # Read-only access
+          'mode': 'ro'
         }
       }
+
+    # Bind /dev on linux for automatic udev reconnection
+    if platform.system() == "Linux":
+      mount_volumes['/dev'] = {'bind': '/dev', 'mode': 'ro'}
 
     print("Starting a new Helios container...")
     container = self.client.containers.run(
