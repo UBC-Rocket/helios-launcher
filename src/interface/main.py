@@ -4,6 +4,7 @@ User Interface for Project Helios using ImGui.
 
 import os
 import re
+import webbrowser
 from imgui_bundle import imgui, immapp, hello_imgui
 from utils import TreeNode, TreeUtils, DockerUtils
 from .components import TreeComponent, EditorComponent, QuickActions
@@ -180,6 +181,12 @@ class UserInterface:
       pass
     return symlinks
 
+  def _collect_websites(self, node: TreeNode) -> list[str]:
+    urls = list(node.websites)
+    for child in node.children:
+      urls.extend(self._collect_websites(child))
+    return urls
+
   def launch_helios(self):
     print("Generating component tree from protobufs and configuration...")
     path = self.tree_utils.generate_component_tree(self.data)
@@ -187,6 +194,10 @@ class UserInterface:
 
     tree_path = self.tree_utils.get_tree_path()
     self.docker_utils.start_helios(tree_path=tree_path)
+
+    for url in self._collect_websites(self.data):
+      print(f"Opening {url}...")
+      webbrowser.open(url)
 
   def scan_docker_images(self):
     """ Check if the docker image exists for all nodes starting at the root """
