@@ -56,18 +56,7 @@ class DockerUtils:
     images = self.client.images.list(name=node.name.lower(), filters=filters)
 
     if not images and node_hash is None:
-      # Fallback already active — no hash filter
-      filters_no_hash = {
-        "label": [
-          f"location={node.location}",
-          f"type={node.type.value}",
-        ]
-      }
-      images = self.client.images.list(name=node.name.lower(), filters=filters_no_hash)
-    elif not images and node_hash is not None:
-      # Hash was resolved but no matching image — try without hash as fallback
-      branch = node.branch or 'HEAD'
-      print(f"[WARNING] No image found for {node.name} at hash {node_hash[:8]}. Falling back to any locally built image on branch '{branch}'.")
+      # No internet — fall back to any locally built image regardless of hash
       filters_no_hash = {
         "label": [
           f"location={node.location}",
