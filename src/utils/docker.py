@@ -6,6 +6,7 @@ from .github import GithubUtils
 from .tree import TreeNode
 from config import *
 from git.exc import GitCommandError
+import platform
 import re
 import json
 import time
@@ -251,9 +252,13 @@ class DockerUtils:
     mount_volumes = DOCKER_VOLUME_CONFIG | {
         str(tree_path): {
           'bind': '/temp/component_tree.json',
-          'mode': 'ro' # Read-only access
+          'mode': 'ro'
         }
       }
+
+    # Bind /dev on linux for automatic udev reconnection
+    if platform.system() == "Linux":
+      mount_volumes['/dev'] = {'bind': '/dev', 'mode': 'ro'}
 
     print("Starting a new Helios container...")
     container = self.client.containers.run(
