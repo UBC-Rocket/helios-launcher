@@ -73,10 +73,12 @@ class DockerUtils:
     devices_raw = found_labels.get("devices", "[]")
     volumes_raw = found_labels.get("volumes", "[]")
     ports_raw = found_labels.get("ports", "{}")
+    websites_raw = found_labels.get("websites", "[]")
 
     devices = json.loads(devices_raw)
     volumes = json.loads(volumes_raw)
     ports = json.loads(ports_raw)
+    websites = json.loads(websites_raw)
     if not isinstance(ports, dict):
       ports = {}
 
@@ -87,6 +89,7 @@ class DockerUtils:
       "devices": devices,
       "volumes": volumes,
       "ports": ports,
+      "websites": websites,
     }
 
   def build_image(self, node: TreeNode) -> None:
@@ -144,6 +147,7 @@ class DockerUtils:
           "devices": json.dumps(list(node.devices.keys())),
           "volumes": json.dumps(list(node.volumes)),
           "ports": json.dumps(node.ports),
+          "websites": json.dumps(node.websites),
         },
         rm=REMOVE_BUILD_INTERMEDIATES,
         decode=True  # ← auto-decodes each chunk from JSON
