@@ -118,21 +118,39 @@ class TreeUtils:
     return tree_location
 
   def save_tree_as_dict(self, root: TreeNode, file_name: str = "configuration.json"):
-    with open(ROOT / ROCKET_CONFIG_FOLDER / file_name, "w") as f:
-      data = root.to_dict()
+    file_path = ROOT / ROCKET_CONFIG_FOLDER / file_name
+
+    # New format: the tree lives under "nodes" alongside other mission config.
+    # Preserve any existing top-level config in the file and only replace the tree.
+    data = {}
+    if file_path.exists():
+      with open(file_path, "r") as f:
+        try:
+          existing = json.load(f)
+          if isinstance(existing, dict) and "nodes" in existing:
+            data = existing
+        except json.JSONDecodeError:
+          data = {}
+
+    data["nodes"] = root.to_dict()
+
+    with open(file_path, "w") as f:
       json.dump(data, f, indent=2)
-    
-    pass
 
   def load_tree_from_dict(self, file_name: str = "configuration.json") -> TreeNode:
     file_path = Path(ROOT) / ROCKET_CONFIG_FOLDER / file_name
-        
+
     if not file_path.exists():
       raise FileNotFoundError(f"No tree configuration found at {file_path}")
 
     with open(file_path, "r") as f:
       data = json.load(f)
-    
+
+    # New format stores the component tree under "nodes" alongside mission
+    # config. Old format (e.g. IREC2026-CloudBurst.json) stored it at the root.
+    if isinstance(data, dict) and "nodes" in data:
+      data = data["nodes"]
+
     return self._dict_to_node(data)
 
   def _dict_to_node(self, data: dict) -> TreeNode:
