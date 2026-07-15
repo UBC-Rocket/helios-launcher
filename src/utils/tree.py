@@ -61,9 +61,9 @@ class TreeUtils:
 
         # Build the nested DockerSpec
         docker_spec = component.DockerSpec()
-        docker_spec.image = node.name.lower() or ""
+        docker_spec.image = sanitize_image_name(node.name) or ""
         docker_spec.tag = node.hash or "latest"
-        docker_spec.container_name = node.name    
+        docker_spec.container_name = sanitize_image_name(node.name)
 
         for vol in node.volumes:  # list of dicts — iterate directly
             v = component.Volume()

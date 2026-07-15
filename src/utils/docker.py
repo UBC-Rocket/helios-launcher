@@ -14,11 +14,6 @@ import sys
 
 REMOVE_BUILD_INTERMEDIATES = True
 
-def sanitize_image_name(name: str) -> str:
-  """Docker image tags can't contain spaces. Lowercase and turn any
-  whitespace into underscores (e.g. "Mission Control" -> "mission_control")."""
-  return re.sub(r"\s+", "_", name.strip().lower())
-
 DOCKER_VOLUME_CONFIG = {
   '/var/run/docker.sock': {
     'bind': '/var/run/docker.sock',
