@@ -87,7 +87,11 @@ class EditorComponent:
 
       # --- Advanced Settings - Flags ---
       self._render_flags(node)
-      
+      imgui.spacing()
+
+      # --- Advanced Settings - Environment Variables ---
+      self._render_env(node)
+
     imgui.spacing()
     imgui.separator()
     imgui.spacing()
@@ -191,6 +195,51 @@ class EditorComponent:
 
     if imgui.button("+ Add Flag"):
       node.flags.append("")
+      self._selection_change()
+
+  def _render_env(self, node: TreeNode):
+    imgui.push_style_color(imgui.Col_.text, (0.6, 0.6, 0.6, 1.0))
+    imgui.text("Environment Variables (Key = Value)")
+    imgui.pop_style_color()
+    imgui.spacing()
+
+    REMOVE_BTN_WIDTH = 24
+    EQ_WIDTH = 22  # space for the "=" separator between the two boxes
+
+    to_remove = None
+    for i, pair in enumerate(node.env):
+      imgui.push_id(f"env_{i}")
+
+      avail = imgui.get_content_region_avail().x
+      box_width = max((avail - REMOVE_BTN_WIDTH - EQ_WIDTH) / 2, 40)
+
+      imgui.set_next_item_width(box_width)
+      changed_key, new_key = imgui.input_text("##key", pair[0], 128)
+      if changed_key:
+        pair[0] = new_key
+        self._selection_change()
+
+      imgui.same_line()
+      imgui.text("=")
+      imgui.same_line()
+
+      imgui.set_next_item_width(box_width)
+      changed_val, new_val = imgui.input_text("##value", pair[1], 256)
+      if changed_val:
+        pair[1] = new_val
+        self._selection_change()
+
+      imgui.same_line()
+      if imgui.button("-", (20, 0)):
+        to_remove = i
+      imgui.pop_id()
+
+    if to_remove is not None:
+      node.env.pop(to_remove)
+      self._selection_change()
+
+    if imgui.button("+ Add Env"):
+      node.env.append(["", ""])
       self._selection_change()
 
   def _render_volumes(self, node: TreeNode):

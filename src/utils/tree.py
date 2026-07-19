@@ -7,7 +7,7 @@ from config.settings import *
 TREE_FILE_NAME = "component_tree.json"
 
 class TreeNode:
-  def __init__(self, name, node_id, children=None, location: str = "", branch: str = "", hash: str = "", type: Node_Type = Node_Type['NONE'], volumes: dict = {}, devices: dict = {}, ports: dict = {}, flags: list = [], websites: list = []):
+  def __init__(self, name, node_id, children=None, location: str = "", branch: str = "", hash: str = "", type: Node_Type = Node_Type['NONE'], volumes: dict = {}, devices: dict = {}, ports: dict = {}, flags: list = [], websites: list = [], env: list | None = None):
     self.name: str = name
     self.id: str = node_id
     self.children: list = children or []
@@ -21,6 +21,9 @@ class TreeNode:
     self.ports: dict = ports
     self.flags: list = flags
     self.websites: list = websites
+    # Environment variables as an ordered list of [key, value] pairs. Kept as
+    # pairs (not a dict) so rows can be edited live without empty keys colliding.
+    self.env: list = env if env is not None else []
     self.warning: bool = False
     self.skip_spawn: bool = False
 
@@ -38,6 +41,7 @@ class TreeNode:
       "ports": self.ports,
       "flags": self.flags,
       "websites": self.websites,
+      "env": self.env,
       "children": [child.to_dict() for child in self.children]
     }
 
@@ -87,6 +91,14 @@ class TreeUtils:
             p.source = container_port
             p.target = host_port or ""
             docker_spec.ports.append(p)
+
+        # Environment variables (map<string, string>). Values support the same
+        # $CALLSIGN-style substitution as flags. Empty keys are dropped.
+        docker_spec.env = {
+            key: self._substitute_flag(value, substitutions)
+            for key, value in node.env
+            if key
+        }
 
         leaf.docker_spec = docker_spec
 
@@ -185,6 +197,17 @@ class TreeUtils:
     if not isinstance(devices, dict):
       devices = {}
 
+    # env is stored as a list of [key, value] pairs. Accept a dict too, for
+    # forward/backward compatibility with hand-edited configs.
+    env = data.pop("env", [])
+    if isinstance(env, dict):
+      env = [[k, v] for k, v in env.items()]
+    if isinstance(env, list):
+      env = [[str(p[0]), str(p[1])] for p in env
+             if isinstance(p, (list, tuple)) and len(p) == 2]
+    else:
+      env = []
+
     node = TreeNode(
       name=data.get("name"),
       node_id=data.get("id"),
@@ -196,7 +219,8 @@ class TreeUtils:
       devices=devices,
       ports=ports,
       flags=data.get("flags", []),
-      websites=data.get("websites", [])
+      websites=data.get("websites", []),
+      env=env
     )
 
     node.image_exists = None
@@ -268,6 +292,7 @@ class TreeUtils:
         "ports": node.ports,
         "volumes": node.volumes,
         "flags": node.flags,
+        "env": node.env,
       }
       for child in node.children:
         collect(child)
@@ -299,6 +324,7 @@ class TreeUtils:
         node.ports = s.get("ports", node.ports)
         node.volumes = s.get("volumes", node.volumes)
         node.flags = s.get("flags", node.flags)
+        node.env = s.get("env", node.env)
         node.image_exists = None  # force a re-scan after restoring bindings
       for child in node.children:
         restore(child)
