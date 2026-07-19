@@ -45,8 +45,12 @@ class TreeUtils:
   def __init__(self):
     pass
 
-  def generate_component_tree(self, root_node: TreeNode) -> Path:
+  def generate_component_tree(self, root_node: TreeNode, meta: dict | None = None) -> Path:
     tree_location = self.get_tree_path()
+
+    # Placeholders like $CALLSIGN in a node's flags are replaced with the
+    # matching value from the loaded config's mission metadata.
+    substitutions = self._build_flag_substitutions(meta)
 
     def build_proto_node(node: TreeNode) -> component.BaseComponent | None:
       base = component.BaseComponent()
@@ -87,7 +91,8 @@ class TreeUtils:
         leaf.docker_spec = docker_spec
 
         for flag in node.flags:
-            leaf.flags.extend(flag.split())
+            resolved = self._substitute_flag(flag, substitutions)
+            leaf.flags.extend(resolved.split())
         leaf.websites.extend(node.websites)
 
         base.leaf = leaf
@@ -203,6 +208,44 @@ class TreeUtils:
   
   def get_tree_path(self) -> Path:
     return Path(ROOT) / TEMP_FOLDER / TREE_FILE_NAME
+
+  # --- Flag placeholder substitution ---------------------------------------
+  # Node flags may contain placeholders like $CALLSIGN that get filled in from
+  # the loaded config's mission metadata when the component tree is generated.
+
+  def _build_flag_substitutions(self, meta: dict | None) -> dict:
+    """Maps $UPPER_KEY -> str(value) for every scalar metadata field
+    (e.g. {"callsign": "VE7XYZ"} -> {"$CALLSIGN": "VE7XYZ"})."""
+    subs = {}
+    if not meta:
+      return subs
+    for key, value in meta.items():
+      if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        continue
+      subs[f"${key.upper()}"] = str(value)
+    return subs
+
+  def _substitute_flag(self, flag: str, subs: dict) -> str:
+    for placeholder, value in subs.items():
+      flag = flag.replace(placeholder, value)
+    return flag
+
+  def update_config_meta(self, config_name: str, field: str, value) -> None:
+    """Updates a single top-level metadata field (e.g. callsign) in the config
+    file on disk, preserving the rest of the file."""
+    file_path = Path(ROOT) / ROCKET_CONFIG_FOLDER / f"{config_name}.json"
+    if not file_path.exists():
+      return
+    with open(file_path, "r") as f:
+      try:
+        data = json.load(f)
+      except json.JSONDecodeError:
+        return
+    if not isinstance(data, dict):
+      return
+    data[field] = value
+    with open(file_path, "w") as f:
+      json.dump(data, f, indent=2)
 
   # --- Per-config runtime settings cache -----------------------------------
   # These persist the user's device/port/volume/flag selections for a given

@@ -188,6 +188,20 @@ class UserInterface:
       imgui.push_style_color(imgui.Col_.text, (0.3, 0.7, 1.0, 1.0))
       imgui.text_wrapped("\n".join(lines))
       imgui.pop_style_color()
+
+      # Editable callsign — writes back to the config file. Used to fill in
+      # $CALLSIGN placeholders in node flags at launch time.
+      imgui.spacing()
+      imgui.text_disabled("CALLSIGN")
+      imgui.set_next_item_width(-1)
+      callsign = meta.get("callsign", "") or ""
+      changed, new_callsign = imgui.input_text("##callsign", callsign, 64)
+      if changed:
+        meta["callsign"] = new_callsign
+      if imgui.is_item_deactivated_after_edit():
+        self.tree_utils.update_config_meta(
+          self.loaded_config_name, "callsign", meta.get("callsign", "")
+        )
     else:
       components = self.count_components(self.data)
       status = "Modified (unsaved changes)" if self.config_dirty else "No config loaded"
@@ -278,7 +292,7 @@ class UserInterface:
     self.save_settings_if_clean()
 
     print("Generating component tree from protobufs and configuration...")
-    path = self.tree_utils.generate_component_tree(self.data)
+    path = self.tree_utils.generate_component_tree(self.data, self.loaded_config_meta)
     print(f"Component tree generated at: {path}")
 
     tree_path = self.tree_utils.get_tree_path()

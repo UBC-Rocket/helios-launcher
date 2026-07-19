@@ -2,7 +2,7 @@
   "mission_name": "CLOUDBURST",
   "event_name": "LC 2026",
   "rocket_name": "CloudBurst",
-  "callsign": "",
+  "callsign": "VA7FAH",
   "expected_apogee_m": 3048,
   "gyro_units": "deg",
   "ground_station": {
