@@ -3,9 +3,20 @@ from imgui_bundle import imgui, portable_file_dialogs as pfd
 from config import *
 
 class EditorComponent:
-  def __init__(self) -> None:
+  def __init__(self, interface=None) -> None:
     #self.current_node = None
-    pass
+    self.interface = interface
+
+  def _structural_change(self, node: TreeNode):
+    """A structural edit means the tree no longer matches the loaded config."""
+    self.node_changed(node)
+    if self.interface:
+      self.interface.mark_tree_dirty()
+
+  def _selection_change(self):
+    """A binding/selection edit: still 'using' the config — persist it."""
+    if self.interface:
+      self.interface.save_settings_if_clean()
 
   def render(self, node: TreeNode | None, height: float = 0, on_close_callback=None, on_delete_callback=None, available_ports: list = ["None"]) -> None:
     if not node:
@@ -28,28 +39,28 @@ class EditorComponent:
     # --- Standard Attributes ---
     changed, new_name = imgui.input_text("Name", node.name, 128)
     if changed:
-      self.node_changed(node)
+      self._structural_change(node)
       node.name = new_name
 
-    if node.children == []:    
+    if node.children == []:
       changed_type, new_type = imgui.combo("Node Type", node.type.value, [node.name for node in Node_Type])
       if changed_type:
-        self.node_changed(node)
+        self._structural_change(node)
         node.type = Node_Type(new_type)
 
       changed_location, new_location = imgui.input_text("Location", node.location, 128)
       if changed_location:
-        self.node_changed(node)
+        self._structural_change(node)
         node.location = new_location
 
       changed_branch, new_branch = imgui.input_text("Branch", node.branch, 128)
       if changed_branch:
-        self.node_changed(node)
+        self._structural_change(node)
         node.branch = new_branch
 
       changed_skip_spawn, new_skip_spawn = imgui.checkbox("Skip Docker Spawn", node.skip_spawn)
       if changed_skip_spawn:
-        self.node_changed(node)
+        self._structural_change(node)
         node.skip_spawn = new_skip_spawn
 
       imgui.spacing()
@@ -128,6 +139,7 @@ class EditorComponent:
 
       if v_changed:
         node.devices[target_key] = available_ports[new_idx]
+        self._selection_change()
 
       imgui.pop_id()
 
@@ -150,6 +162,7 @@ class EditorComponent:
       changed, new_host = imgui.input_text("##host", host_port, 32)
       if changed:
         node.ports[container_port] = new_host
+        self._selection_change()
 
       imgui.pop_id()
 
@@ -166,6 +179,7 @@ class EditorComponent:
       changed, new_flag = imgui.input_text("##flag", flag, 256)
       if changed:
         node.flags[i] = new_flag
+        self._selection_change()
       imgui.same_line()
       if imgui.button("-", (20, 0)):
         to_remove = i
@@ -173,9 +187,11 @@ class EditorComponent:
 
     if to_remove is not None:
       node.flags.pop(to_remove)
+      self._selection_change()
 
     if imgui.button("+ Add Flag"):
       node.flags.append("")
+      self._selection_change()
 
   def _render_volumes(self, node: TreeNode):
     imgui.push_style_color(imgui.Col_.text, (0.6, 0.6, 0.6, 1.0))
@@ -224,10 +240,12 @@ class EditorComponent:
           dialog = pfd.open_file("Select a file", ".")
           if dialog.result():
             node.volumes[i]['source'] = dialog.result()[0]
+            self._selection_change()
         elif source_type == "folder":
           dialog = pfd.select_folder("Select a folder", ".")
           if dialog.result():
             node.volumes[i]['source'] = dialog.result()
+            self._selection_change()
         else:
           imgui.text("Invalid volume type")
 

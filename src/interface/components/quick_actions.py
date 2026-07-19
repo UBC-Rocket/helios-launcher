@@ -232,7 +232,7 @@ class QuickActions:
       imgui.begin_disabled()
     if imgui.button("Load", (button_width, 36)):
       filename = self.load_configs[self.load_selected_index] + ".json"
-      self.interface.data = self.interface.tree_utils.load_tree_from_dict(filename)
+      self.interface.load_config(filename)
       imgui.close_current_popup()
       self.open_load_modal = False
     if not can_load:

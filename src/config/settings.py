@@ -12,6 +12,9 @@ def sanitize_image_name(name: str) -> str:
 
 ROOT = Path(__file__).parent.parent # src/ directory
 TEMP_FOLDER = "tmp"
+# Per-config runtime selections (device/port/volume/flag bindings) are cached
+# here so they survive a launcher restart.
+SETTINGS_FOLDER = "tmp/settings"
 ROCKET_CONFIG_FOLDER = "config/rockets"
 
 class Node_Type(Enum):

@@ -40,11 +40,18 @@ class UserInterface:
 
     self.next_node_id = 1 # Track the next available node ID for unique identification
 
+    # Loaded-config tracking for the project overview + settings cache
+    self.loaded_config_name: str | None = None # config filename (no extension)
+    self.loaded_config_meta: dict = {} # mission metadata from the config file
+    self.config_dirty: bool = False # True once the tree is structurally edited
+    self.settings_available: bool = False # cached selections exist for this config
+    self.settings_applied: bool = False # cached selections already loaded this session
+
     self.tree_utils = TreeUtils()
     self.docker_utils = DockerUtils()
 
     self.tree_component = TreeComponent(self)
-    self.editor_component = EditorComponent()
+    self.editor_component = EditorComponent(self)
     self.quick_actions = QuickActions(self)
 
     runner_params = hello_imgui.RunnerParams()
@@ -122,13 +129,24 @@ class UserInterface:
     
     imgui.text_disabled("PROJECT OVERVIEW")
     imgui.separator()
+    self.render_project_overview()
 
-    # TODO: Replace with actual stats
-    imgui.same_line()
-    imgui.text_wrapped("Helios Launcher v1.0\nStatus: Active\nNodes: 12")
-    
     imgui.spacing()
-    
+
+    # Offer to restore previously-used selections for this config (shown above
+    # the tree, below the overview) when a cached settings file exists.
+    if (self.loaded_config_name
+        and self.settings_available
+        and not self.settings_applied):
+      imgui.push_style_color(imgui.Col_.button,         (0.20, 0.45, 0.90, 1.00))
+      imgui.push_style_color(imgui.Col_.button_hovered, (0.28, 0.53, 1.00, 1.00))
+      imgui.push_style_color(imgui.Col_.button_active,  (0.15, 0.38, 0.80, 1.00))
+      imgui.push_style_color(imgui.Col_.text,           WHITE_COLOR)
+      if imgui.button("Load previously used settings", (-1, 30)):
+        self.apply_saved_settings()
+      imgui.pop_style_color(4)
+      imgui.spacing()
+
     imgui.text_disabled("HIERARCHY TREE")
     imgui.separator()
     imgui.spacing()
@@ -145,6 +163,72 @@ class UserInterface:
 
     imgui.end()
 
+  def render_project_overview(self):
+    """Shows the loaded config's name/stats, or a generic overview. Once the
+    tree is structurally modified we stop advertising the config as loaded."""
+    if self.loaded_config_name and not self.config_dirty:
+      meta = self.loaded_config_meta
+      components = self.count_components(self.data)
+
+      lines = []
+      event = meta.get("event_name")
+      rocket = meta.get("rocket_name") or meta.get("mission_name")
+      if event and rocket:
+        lines.append(f"{event} — {rocket}")
+      elif event or rocket:
+        lines.append(event or rocket)
+
+      lines.append(f"Config: {self.loaded_config_name}")
+      if meta.get("mission_name"):
+        lines.append(f"Mission: {meta['mission_name']}")
+      if meta.get("expected_apogee_m"):
+        lines.append(f"Expected apogee: {meta['expected_apogee_m']} m")
+      lines.append(f"Components: {components}")
+
+      imgui.push_style_color(imgui.Col_.text, (0.3, 0.7, 1.0, 1.0))
+      imgui.text_wrapped("\n".join(lines))
+      imgui.pop_style_color()
+    else:
+      components = self.count_components(self.data)
+      status = "Modified (unsaved changes)" if self.config_dirty else "No config loaded"
+      imgui.text_wrapped(f"Helios Launcher v1.0\nStatus: {status}\nComponents: {components}")
+
+  def count_components(self, node: TreeNode) -> int:
+    """Counts leaf nodes (actual buildable components) in the tree."""
+    if not node.children:
+      return 0 if node.id == "root" else 1
+    return sum(self.count_components(child) for child in node.children)
+
+  def load_config(self, filename: str):
+    """Loads a config file (by filename incl. .json) and resets loaded-config
+    tracking state so the overview + settings cache reflect the new config."""
+    name = os.path.splitext(filename)[0]
+    self.data, self.loaded_config_meta = self.tree_utils.load_config(filename)
+    self.loaded_config_name = name
+    self.config_dirty = False
+    self.settings_applied = False
+    self.settings_available = self.tree_utils.has_config_settings(name)
+
+  def mark_tree_dirty(self):
+    """Called on structural edits: the tree no longer matches the loaded config,
+    so stop showing it as loaded and stop auto-saving its settings cache."""
+    self.config_dirty = True
+
+  def save_settings_if_clean(self):
+    """Persists current selections to the per-config settings cache, but only
+    while the config is loaded and structurally unmodified."""
+    if self.loaded_config_name and not self.config_dirty:
+      self.tree_utils.save_config_settings(self.loaded_config_name, self.data)
+      self.settings_available = True
+      # The live tree already reflects these settings, so don't re-offer them.
+      self.settings_applied = True
+
+  def apply_saved_settings(self):
+    """Restores previously cached selections for the loaded config."""
+    if self.loaded_config_name and self.tree_utils.apply_config_settings(
+        self.loaded_config_name, self.data):
+      self.settings_applied = True
+
   def close_editting_node(self):
     self.tree_component.clear_editting_mode()
 
@@ -153,6 +237,7 @@ class UserInterface:
     if node_to_delete:
       self.tree_component.delete_node(node_to_delete)
       self.tree_component.clear_editting_mode()
+      self.mark_tree_dirty()
 
   def get_ports_list(self):
     ports = serial.tools.list_ports.comports()
@@ -188,6 +273,10 @@ class UserInterface:
     return urls
 
   def launch_helios(self):
+    # A launch is the clearest signal the config is "in use"; snapshot the
+    # current selections so they can be restored next time (if unmodified).
+    self.save_settings_if_clean()
+
     print("Generating component tree from protobufs and configuration...")
     path = self.tree_utils.generate_component_tree(self.data)
     print(f"Component tree generated at: {path}")
@@ -278,6 +367,7 @@ class UserInterface:
     print(f"Adding new node '{node.name}' under parent '{parent_name}'")
     if parent_node is not None:
       parent_node.children.append(node)
+      self.mark_tree_dirty()
     else:
       print(f"Parent node '{parent_name}' not found. Cannot add new node '{node.name}'.")
 
