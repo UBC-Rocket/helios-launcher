@@ -261,7 +261,28 @@ class UserInterface:
     real_ports = [p for p in ports if p.hwid != "n/a"]
     serial_devices = [f"{p.device}:{p.description}" for p in real_ports]
     udev_symlinks = self._get_udev_serial_symlinks({p.device for p in real_ports})
-    return ["None"] + serial_devices + udev_symlinks + ["/dev/snd:All ALSA devices (direwolf/KISS)"]
+    video_devices = self._get_video_devices()
+    return ["None"] + serial_devices + udev_symlinks + video_devices + ["/dev/snd:All ALSA devices (direwolf/KISS)"]
+
+  def _get_video_devices(self) -> list[str]:
+    """Enumerate V4L2 video capture devices (/dev/video*) so they can be bound
+    into containers alongside serial/audio devices."""
+    dev_dir = "/dev"
+    if not os.path.exists(dev_dir):
+      return []
+    video_devices = []
+    try:
+      # Sort numerically so /dev/video2 sorts after /dev/video10-free ordering
+      names = sorted(
+        (n for n in os.listdir(dev_dir) if re.fullmatch(r"video\d+", n)),
+        key=lambda n: int(n[len("video"):]),
+      )
+      for name in names:
+        path = os.path.join(dev_dir, name)
+        video_devices.append(f"{path}:V4L2 video device ({name})")
+    except OSError:
+      pass
+    return video_devices
 
   def _get_udev_serial_symlinks(self, known_devices: set) -> list[str]:
     dev_dir = "/dev"
