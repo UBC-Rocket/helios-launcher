@@ -8,7 +8,7 @@ TREE_FILE_NAME = "component_tree.json"
 
 class TreeNode:
   def __init__(self, name, node_id, children=None, location: str = "", branch: str = "", hash: str = "", type: Node_Type = Node_Type['NONE'], volumes: dict = {}, devices: dict = {}, ports: dict = {}, flags: list = [], websites: list = [], env: list | None = None):
-    self.name: str = name
+    self.name = name  # property setter strips spaces -> underscores
     self.id: str = node_id
     self.children: list = children or []
     self.location: str = location
@@ -26,6 +26,17 @@ class TreeNode:
     self.env: list = env if env is not None else []
     self.warning: bool = False
     self.skip_spawn: bool = False
+
+  @property
+  def name(self) -> str:
+    return self._name
+
+  @name.setter
+  def name(self, value):
+    # Node names can't contain spaces; any whitespace becomes underscores.
+    # Enforced here so it applies whether the name comes from a config file
+    # or a live edit in the editor.
+    self._name = sanitize_node_name(value)
 
   def to_dict(self):
     return {

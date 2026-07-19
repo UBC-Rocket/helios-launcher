@@ -10,6 +10,14 @@ def sanitize_image_name(name: str) -> str:
   whitespace into underscores (e.g. "Mission Control" -> "mission_control")."""
   return re.sub(r"\s+", "_", name.strip().lower())
 
+def sanitize_node_name(name: str) -> str:
+  """Node names can't contain spaces. Turn any whitespace into underscores
+  (e.g. "Mission Control" -> "Mission_Control"). Case is preserved so the
+  display name stays readable, unlike sanitize_image_name."""
+  if name is None:
+    return name
+  return re.sub(r"\s+", "_", name.strip())
+
 ROOT = Path(__file__).parent.parent # src/ directory
 TEMP_FOLDER = "tmp"
 # Per-config runtime selections (device/port/volume/flag bindings) are cached
