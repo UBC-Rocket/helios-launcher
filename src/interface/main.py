@@ -134,10 +134,13 @@ class UserInterface:
     imgui.spacing()
 
     # Offer to restore previously-used selections for this config (shown above
-    # the tree, below the overview) when a cached settings file exists.
+    # the tree, below the overview) once a cached settings file exists AND every
+    # node has been scanned with its image confirmed — only then are there
+    # bindings to actually edit/restore.
     if (self.loaded_config_name
         and self.settings_available
-        and not self.settings_applied):
+        and not self.settings_applied
+        and self.all_images_exist(self.data)):
       imgui.push_style_color(imgui.Col_.button,         (0.20, 0.45, 0.90, 1.00))
       imgui.push_style_color(imgui.Col_.button_hovered, (0.28, 0.53, 1.00, 1.00))
       imgui.push_style_color(imgui.Col_.button_active,  (0.15, 0.38, 0.80, 1.00))
@@ -350,6 +353,14 @@ class UserInterface:
       for child in node.children:
         self._build_docker_image(child)
     
+  def all_images_exist(self, node: TreeNode) -> bool:
+    """ True only if every leaf node has been scanned and its image confirmed
+    to exist (image_exists is True). Until then there are no device/port/volume
+    bindings to edit or restore. """
+    if node.children == []:
+      return node.image_exists is True
+    return all(self.all_images_exist(child) for child in node.children)
+
   def no_container_warnings(self, node: TreeNode) -> bool:
     if node.children == []:
         return bool(node.image_exists) and not node.warning
