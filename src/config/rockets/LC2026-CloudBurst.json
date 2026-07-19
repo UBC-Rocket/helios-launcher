@@ -151,7 +151,22 @@
             "flags": [],
             "websites": [],
             "children": []
-          }
+          },
+          {
+            "name": "Video_Feed",
+            "id": "node_3",
+            "location": "https://github.com/helios-data/helios-video-feed",
+            "branch": "main",
+            "hash": "",
+            "type": 1,
+            "image_exists": null,
+            "volumes": {},
+            "devices": {},
+            "ports": {},
+            "flags": [],
+            "websites": [],
+            "children": []
+          },
         ]
       }
     ]
