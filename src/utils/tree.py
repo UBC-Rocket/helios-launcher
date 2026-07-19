@@ -325,7 +325,9 @@ class TreeUtils:
         node.volumes = s.get("volumes", node.volumes)
         node.flags = s.get("flags", node.flags)
         node.env = s.get("env", node.env)
-        node.image_exists = None  # force a re-scan after restoring bindings
+        # Note: don't touch image_exists — restoring runtime bindings
+        # (devices/ports/volumes/flags/env) doesn't change whether the image
+        # is built, and resetting it would grey out every node.
       for child in node.children:
         restore(child)
 

@@ -116,6 +116,22 @@ class EditorComponent:
     """ If any of the basic node information is changed, we need to recheck if the image exists """
     node.image_exists = None
 
+  def _match_device_index(self, source_val, available_ports: list) -> int:
+    """Finds the dropdown index for a saved device binding. Falls back to
+    matching on the device path (the part before ':') so a restored selection
+    still resolves even if the description suffix differs between sessions."""
+    if not source_val:
+      return 0
+    if source_val in available_ports:
+      return available_ports.index(source_val)
+    saved_path = source_val.split(":")[0]
+    for idx, option in enumerate(available_ports):
+      if idx == 0:
+        continue  # skip "None"
+      if option.split(":")[0] == saved_path:
+        return idx
+    return 0
+
   def _render_devices(self, node: TreeNode, available_ports: list = ["None"]):
     imgui.push_style_color(imgui.Col_.text, (0.6, 0.6, 0.6, 1.0))
     imgui.text("Required Device Bindings (Target : Source)")
@@ -125,7 +141,7 @@ class EditorComponent:
       source_val = node.devices[target_key]
       imgui.push_id(f"device_{target_key}")
 
-      current_idx = available_ports.index(source_val) if source_val in available_ports else 0
+      current_idx = self._match_device_index(source_val, available_ports)
       if current_idx == 0:
         node.warning = True
         imgui.text_colored((1.0, 0.2, 0.2, 1.0), "⚠")
