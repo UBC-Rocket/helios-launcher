@@ -8,10 +8,6 @@ PROTO_BUILD_DIR=src/generated
 PROTO_SRC := $(shell find $(PROTO_SOURCE_DIR) -name "*.proto")
 BETTER_PROTO_PLUGIN=$(shell find .venv -name protoc-gen-python_betterproto2\*)
 
-# 1=true, 0=false
-DOCKER_DISABLED=1
-export DOCKER_DISABLED
-
 MKDIR = mkdir -p $(1)
 RM = rm -rf
 SEPARATOR = /
