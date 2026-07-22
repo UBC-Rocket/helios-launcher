@@ -18,7 +18,7 @@ def sanitize_node_name(name: str) -> str:
     return name
   return re.sub(r"\s+", "_", name.strip())
 
-ROOT = Path(__file__).parent.parent # src/ directory
+ROOT = Path(__file__).parent.parent # repo root
 TEMP_FOLDER = "tmp"
 # Per-config runtime selections (device/port/volume/flag bindings) are cached
 # here so they survive a launcher restart.

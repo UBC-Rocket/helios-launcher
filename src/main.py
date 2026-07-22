@@ -1,4 +1,11 @@
 import os
+import sys
+from pathlib import Path
+
+# config/ now lives at the repo root, but this script is run as `src/main.py`,
+# so only src/ is on sys.path by default. Add the repo root so `config` imports.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from utils import TreeNode
 from interface import UserInterface
 from config.settings import *
