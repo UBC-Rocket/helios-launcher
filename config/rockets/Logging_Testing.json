@@ -1,0 +1,171 @@
+{
+  "mission_name": "CLOUDBURST",
+  "event_name": "LC 2026",
+  "rocket_name": "CloudBurst",
+  "callsign": "VA7FAH",
+  "expected_apogee_m": 11000,
+  "main_deploy_alt_agl_m ": 457.2,
+  "gyro_units": "deg",
+  "drogue_drag_coeff": 0.85,
+  "main_drag_coeff": 2.2,
+  "drogue_area_m2": 0.87,
+  "main_area_m2": 1.72,
+  "wet_mass_kg": 27.54,
+  "dry_mass_kg": 16.61,
+  "expected_ground_station": {
+    "label": "Ground Station",
+    "lat": 32.9903,
+    "lon": -106.9749,
+    "alt_m": 1401
+  },
+  "ui": {
+    "refresh_hz": 20,
+    "srad_stale_seconds": 5,
+    "cots_stale_seconds": 60,
+    "video_source": "webrtc-url",
+    "video_url": "http://localhost:1984/api/webrtc?src=cloudburst"
+  },
+  "map": {
+    "tile_url": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "user_agent": "helios-mission-control/0.1 (UBC Rocket)",
+    "prewarm": { "enabled": true, "radius_km": 12, "min_zoom": 9, "max_zoom": 14 }
+  },
+  "nodes": {
+    "name": "Helios",
+    "id": "root",
+    "location": "",
+    "branch": "",
+    "hash": "",
+    "type": 0,
+    "image_exists": null,
+    "volumes": {},
+    "devices": {},
+    "ports": {},
+    "flags": [],
+    "websites": [],
+    "children": [
+      {
+        "name": "HeliosCore",
+        "id": "main",
+        "location": "https://github.com/helios-data/helios-core",
+        "branch": "IREC2026",
+        "hash": "",
+        "type": 1,
+        "image_exists": null,
+        "volumes": {},
+        "devices": {},
+        "ports": {},
+        "flags": [],
+        "websites": [],
+        "children": []
+      },
+      {
+        "name": "FALCON",
+        "id": "1",
+        "location": "",
+        "branch": "",
+        "hash": "",
+        "type": 0,
+        "image_exists": null,
+        "volumes": {},
+        "devices": {},
+        "ports": {},
+        "flags": [],
+        "websites": [],
+        "children": [
+          {
+            "name": "SRAD_Telemetry",
+            "id": "2",
+            "location": "https://github.com/helios-data/helios-simulated-telemetry",
+            "branch": "LC2026",
+            "hash": "",
+            "type": 1,
+            "image_exists": null,
+            "volumes": {},
+            "devices": {},
+            "ports": {},
+            "flags": [],
+            "websites": [],
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "Services",
+        "id": "6",
+        "location": "",
+        "branch": "",
+        "hash": "",
+        "type": 0,
+        "image_exists": null,
+        "volumes": {},
+        "devices": {},
+        "ports": {},
+        "flags": [],
+        "websites": [],
+        "children": [
+          {
+            "name": "Dashboard",
+            "id": "7",
+            "location": "https://github.com/helios-data/helios-dashboard",
+            "branch": "LC2026",
+            "hash": "",
+            "type": 1,
+            "image_exists": null,
+            "volumes": {},
+            "devices": {},
+            "ports": {},
+            "flags": [],
+            "websites": [],
+            "children": []
+          },
+          {
+            "name": "Mission_Control",
+            "id": "node_2",
+            "location": "https://github.com/helios-data/helios-mission-control",
+            "branch": "LC2026",
+            "hash": "",
+            "type": 1,
+            "image_exists": null,
+            "volumes": {},
+            "devices": {},
+            "ports": {},
+            "flags": [],
+            "websites": [],
+            "children": []
+          },
+          {
+            "name": "Video_Feed",
+            "id": "node_3",
+            "location": "https://github.com/helios-data/helios-video-feed",
+            "branch": "main",
+            "hash": "",
+            "type": 1,
+            "image_exists": null,
+            "volumes": {},
+            "devices": {},
+            "ports": {},
+            "flags": [],
+            "websites": [],
+            "children": []
+          },
+          {
+            "name": "LandingPredictor",
+            "id": "node_4",
+            "location": "https://github.com/helios-data/helios-landing-predictor",
+            "branch": "LC2026",
+            "hash": "",
+            "type": 1,
+            "image_exists": null,
+            "volumes": {},
+            "devices": {},
+            "ports": {},
+            "flags": [],
+            "websites": [],
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}
