@@ -178,6 +178,21 @@
             "flags": [],
             "websites": [],
             "children": []
+          },
+          {
+            "name": "GroundGPS",
+            "id": "node_5",
+            "location": "https://github.com/helios-data/helios-ground-gps",
+            "branch": "main",
+            "hash": "",
+            "type": 1,
+            "image_exists": null,
+            "volumes": {},
+            "devices": {},
+            "ports": {},
+            "flags": [],
+            "websites": [],
+            "children": []
           }
         ]
       }
