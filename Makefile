@@ -1,4 +1,4 @@
-.PHONY: proto deps run submodule
+.PHONY: protos deps run submodule kill
 
 # Variables
 PROTO_SOURCE_DIR=helios-protos
@@ -40,3 +40,11 @@ run:
 
 submodule:
 	git submodule update --remote --merge
+
+kill:
+	@ids=$$(docker ps -q); \
+	if [ -n "$$ids" ]; then \
+		docker kill $$ids; \
+	else \
+		echo "No running containers"; \
+	fi
