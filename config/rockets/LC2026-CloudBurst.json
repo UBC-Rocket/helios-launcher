@@ -120,21 +120,6 @@
         "websites": [],
         "children": [
           {
-            "name": "Dashboard",
-            "id": "7",
-            "location": "https://github.com/helios-data/helios-dashboard",
-            "branch": "LC2026",
-            "hash": "",
-            "type": 1,
-            "image_exists": null,
-            "volumes": {},
-            "devices": {},
-            "ports": {},
-            "flags": [],
-            "websites": [],
-            "children": []
-          },
-          {
             "name": "Mission_Control",
             "id": "node_2",
             "location": "https://github.com/helios-data/helios-mission-control",
