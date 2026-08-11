@@ -48,7 +48,7 @@
         "name": "HeliosCore",
         "id": "main",
         "location": "https://github.com/helios-data/helios-core",
-        "branch": "IREC2026",
+        "branch": "edward/new-features",
         "hash": "",
         "type": 1,
         "image_exists": null,
