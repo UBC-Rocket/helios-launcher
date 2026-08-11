@@ -193,6 +193,21 @@
             "flags": [],
             "websites": [],
             "children": []
+          },
+          {
+            "name": "Logging",
+            "id": "node_6",
+            "location": "https://github.com/helios-data/logging",
+            "branch": "main",
+            "hash": "",
+            "type": 1,
+            "image_exists": null,
+            "volumes": {},
+            "devices": {},
+            "ports": {},
+            "flags": [],
+            "websites": [],
+            "children": []
           }
         ]
       }
